@@ -1,80 +1,71 @@
 import './charList.scss';
-import React, { Component } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import MarvelService from '../../services/MarvelService';
 import Spinner from '../spinner/Spinner';
 import Error from '../error/Error';
 
-import PropTypes from 'prop-types';
+import PropTypes, { func } from 'prop-types';
 
 
-class CharList extends Component {
+const CharList = (props) => {
+
+    const[charlist, setcharlist] = useState([]);
+    const[loading, setLoading] = useState(true);
+    const[error, seterror] = useState(false);
+    const[newItemLoading, setnewItemLoading] = useState(false);
+    const[offSet, setoffSet] = useState(200);
+    const[charEnded, setcharEnded] = useState(false);
     
-    state = {
-        charlist: [],
-        loading: true,
-        error: false,
-        //загрузка новых елементов
-        newItemLoading: false,
-        offSet: 200,
-        charEnded: false
-    }
 //создадим новое свойсво внутри класса
-    marvelService = new MarvelService();
+   const marvelService = new MarvelService();
 
-componentDidMount() {
-        // this.marvelService.getAllCharacters()
-        // .then(this.onCharListLoaded)
-        // .catch(this.onError)
-        //заменили все выше кодом ниже
-        this.onRequest()
-}
+   useEffect(() => {
+    onRequest();
+      //когда оставляем тут пустой массив функция віполнится только один раз  
+   }, [])
+
+
 //запрос когда пользователь кликает на кнопочку
-onRequest = (offSet) => {
-    this.onCharListLoading()
-    this.marvelService.getAllCharacters(offSet)
-        .then(this.onCharListLoaded)
-        .catch(this.onError)
+const onRequest = (offSet) => {
+    onCharListLoading()
+    marvelService.getAllCharacters(offSet)
+        .then(onCharListLoaded)
+        .catch(onError)
 }
-onCharListLoading = () => {
-    this.setState({
-        newItemLoading: true
-    })
+const onCharListLoading = () => {
+    setnewItemLoading(true);
+
 }
-onCharListLoaded = (newCharList) => {
+const onCharListLoaded = (newCharList) => {
     let ended = false;
     if (newCharList.length < 9) {
         ended = true;
     }
-
-    this.setState(({offSet, charlist}) => ({
-        charlist: [...charlist, ...newCharList],
-        loading:false,
-        newItemLoading: false,
-        offSet: offSet + 9,
-        charEnded: ended
-    }))
+    setcharlist(charlist => [...charlist, ...newCharList]);
+    setLoading(loading => false);
+    setnewItemLoading(newItemLoading => false);
+    setoffSet(offSet => offSet + 9);
+    setcharEnded(charEnded => ended)
 }
-onError = () => {
-    this.setState({
-        error: true,
-        loading: false
-    })
+const onError = () => {
+    seterror(true);
+    setLoading(false);
 }
 
-itemRefs = [];
+const itemRefs = useRef([]);
 
-setRef = (ref) => {
-    this.itemRefs.push(ref)
-}
+// setRef = (ref) => {
+//     this.itemRefs.push(ref)
+// }
 
-focusOnItem = (id) => {
-    this.itemRefs.forEach(item => item.classList.remove('char__item_selected'));
-    this.itemRefs[id].classList.add('char__item_selected');
-    this.itemRefs[id].focus();
+const focusOnItem = (id) => {
+    itemRefs.current.forEach(item => item.classList.remove('char__item_selected'));
+    itemRefs.current[id].classList.add('char__item_selected');
+    itemRefs.current[id].focus();
 }
 // Этот метод создан для оптимизации, 
 // чтобы не помещать такую конструкцию в метод render
-renderItems(arr) {
+function renderItems(arr) {
     const items = arr.map((item, i) => {
         let imgStyle = {'objectFit' : 'cover'};
         if (item.thumbnail ==='http://i.annihil.us/u/prod/marvel/i/mg/b/40/image_not_available.jpg') {
@@ -85,15 +76,15 @@ renderItems(arr) {
                 className="char__item"
                 key={item.id}
                 tabIndex={0}
-                ref={this.setRef}
+                ref={el => itemRefs.current[i] = el}
                 onClick={() => {
-                    this.props.onCharSelected(item.id)
-                    this.focusOnItem(i)
+                    props.onCharSelected(item.id)
+                    focusOnItem(i)
                     }}
                 onKeyDown  ={(e) => {
                         if (e.key === ' ' || e.key === "Enter") {
-                            this.props.onCharSelected(item.id);
-                            this.focusOnItem(i);
+                            props.onCharSelected(item.id);
+                            focusOnItem(i);
                         }
                     }}>
                     <img src={item.thumbnail} alt={item.name} style={imgStyle}/>
@@ -109,28 +100,26 @@ renderItems(arr) {
             )
 }
         
-    render() {
-        const {charlist, loading, error, offSet, newItemLoading, charEnded} = this.state;
-        const items = this.renderItems(charlist);
+        const items = renderItems(charlist);
 
         const errorMessage = error ? <Error/> : null;
         const spinner = loading ? <Spinner/> : null;
         const content = !(loading || error) ? items: null;
         return (
-        <div className="char__list">
-            {content}
-            {errorMessage}
-            {spinner}
-            <button 
-                className="button button__main button__long"
-                disabled = {newItemLoading}
-                style={{'display': charEnded ? 'none' : 'block'}}
-                onClick={() => this.onRequest(offSet)}>
-                <div className="inner">load more</div>
-            </button>
-        </div>
+            <div className="char__list">
+                {content}
+                {errorMessage}
+                {spinner}
+                <button 
+                    className="button button__main button__long"
+                    disabled = {newItemLoading}
+                    style={{'display': charEnded ? 'none' : 'block'}}
+                    onClick={() => onRequest(offSet)}>
+                    <div className="inner">load more</div>
+                </button>
+            </div>
     )
-    }
+    
 }
 CharList.propTypes = {
     onCharSelected: PropTypes.func.isRequired

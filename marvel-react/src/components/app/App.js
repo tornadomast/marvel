@@ -3,30 +3,18 @@ import RandomChar from "../randomChar/RandomChar";
 import CharList from "../charList/CharList";
 import CharInfo from "../charInfo/CharInfo";
 
-
-import { Component } from "react";
+import { useState } from "react";
 
 import decoration from '../../resources/img/vision.png';
 import ErrorBoundary from "../errorBoundary/ErrorBoundary";
 
-class App extends Component {
+const App = () => {
+    const[selectedChar, setChar] = useState(null);
 
-    state = {
-        selectedChar: null
-        }
+ const onCharSelected = (id) => {
+        setChar(id);
+ }
 
-    //создадим метод
-    onCharSelected = (id) => {
-        this.setState({
-            selectedChar: id
-        })
-    }
-
-
-
-
-
-    render() {
  return (
         <div className="app">
             <AppHeader/>
@@ -36,17 +24,17 @@ class App extends Component {
                 </ErrorBoundary>
                 <div className="char__content">
                     <ErrorBoundary>
-                        <CharList onCharSelected={this.onCharSelected}/>
+                        <CharList onCharSelected={onCharSelected}/>
                     </ErrorBoundary>
                     <ErrorBoundary>
-                        <CharInfo charId={this.state.selectedChar}/>
+                        <CharInfo charId={selectedChar}/>
                     </ErrorBoundary>
                 </div>
                 <img className="bg-decoration" src={decoration} alt="vision"/>
             </main>
         </div>
     )
-    }
+}   
    
-}
+
 export default App;
